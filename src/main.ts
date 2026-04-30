@@ -7,8 +7,18 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Habilitar CORS
+  // Allow multiple origins via comma-separated CORS_ORIGIN or enable localhost:5173 for frontend dev
+  const rawOrigins = process.env.CORS_ORIGIN || 'http://localhost:3001';
+  const origins = rawOrigins.split(',').map((s) => s.trim()).filter(Boolean);
+  if (!origins.includes('http://localhost:5173')) origins.push('http://localhost:5173');
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3001',
+    origin: (origin, callback) => {
+      // allow non-browser requests like curl (no origin)
+      if (!origin) return callback(null, true);
+      if (origins.indexOf(origin) !== -1) return callback(null, true);
+      return callback(new Error('CORS policy: origin not allowed'), false);
+    },
     credentials: true,
   });
 
