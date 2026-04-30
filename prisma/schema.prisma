@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TipoDispositivo {
+  codigo          String        @id @db.VarChar(10)
+  descripcion     String        @db.VarChar(200)
+  caracteristicas String?       @db.Text
+  marcaModelo     String?       @db.VarChar(150)
+  imagenUrl       String?       @db.VarChar(500)
+  esTraslado      Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  dispositivos    Dispositivo[]
+
+  @@map("tipo_dispositivo")
+}
+
+model Area {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique @db.VarChar(120)
+  planoUrl  String?   @db.VarChar(500)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  oficinas  Oficina[]
+
+  @@map("area")
+}
+
+model Oficina {
+  id        Int           @id @default(autoincrement())
+  nombre    String        @db.VarChar(200)
+  piso      Int
+  areaId    Int
+  area      Area          @relation(fields: [areaId], references: [id])
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  destinos  Dispositivo[] @relation("Destino")
+  origenes  Dispositivo[] @relation("Origen")
+
+  @@map("oficina")
+}
+
+model Dispositivo {
+  id               Int             @id @default(autoincrement())
+  codigoInventario String?         @unique @db.VarChar(100)
+  tipoCodigo       String          @db.VarChar(10)
+  tipo             TipoDispositivo @relation(fields: [tipoCodigo], references: [codigo])
+  estado           Estado
+  destinoId        Int
+  destino          Oficina         @relation("Destino", fields: [destinoId], references: [id])
+  origenId         Int?
+  origen           Oficina?        @relation("Origen", fields: [origenId], references: [id])
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@map("dispositivo")
+}
+
+enum Estado {
+  nuevo
+  traslado
+}
