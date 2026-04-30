@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { DevicesService } from './devices.service';
 import { CreateDeviceDto, UpdateDeviceDto } from './dto/create-device.dto';
@@ -19,8 +19,10 @@ export class DevicesController {
 
   @Get()
   @ApiOperation({ summary: 'Obtener todos los dispositivos' })
-  async findAll() {
-    return this.devicesService.findAll();
+  async findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    return this.devicesService.findAll(pageNum, limitNum);
   }
 
   @Get(':id')

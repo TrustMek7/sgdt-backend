@@ -15,6 +15,9 @@ async function bootstrap() {
   // Validación global de DTOs
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
 
+  // Prefijo global
+  app.setGlobalPrefix('api');
+
   // Swagger
   const config = new DocumentBuilder()
     .setTitle('SGDT API')
