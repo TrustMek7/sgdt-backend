@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
-import { CreateReportDto, UpdateReportDto } from './dto/create-report.dto';
+import { CreateReportBatchDto, CreateReportDto, UpdateReportDto } from './dto/create-report.dto';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 
 @ApiTags('reports')
@@ -15,6 +15,12 @@ export class ReportsController {
   @ApiOperation({ summary: 'Crear un nuevo reporte' })
   async create(@Body() createReportDto: CreateReportDto) {
     return this.reportsService.create(createReportDto);
+  }
+
+  @Post('batch')
+  @ApiOperation({ summary: 'Generar múltiples reportes filtrados' })
+  async batch(@Body() createReportBatchDto: CreateReportBatchDto) {
+    return this.reportsService.batch(createReportBatchDto);
   }
 
   @Get()

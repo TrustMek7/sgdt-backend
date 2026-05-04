@@ -61,6 +61,7 @@ model Dispositivo {
   destino          Oficina         @relation("Destino", fields: [destinoId], references: [id])
   origenId         Int?
   origen           Oficina?        @relation("Origen", fields: [origenId], references: [id])
+  origenDescripcion String?        @db.VarChar(200)
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 

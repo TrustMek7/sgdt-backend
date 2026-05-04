@@ -1,10 +1,110 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { CreateReportDto, UpdateReportDto } from './dto/create-report.dto';
+import { CreateReportBatchDto, CreateReportDto, ReportBatchFilterDto, UpdateReportDto } from './dto/create-report.dto';
 
 @Injectable()
 export class ReportsService {
   constructor(private prisma: PrismaService) {}
+
+  private async loadSources() {
+    const [areas, offices, devices, deviceTypes] = await Promise.all([
+      this.prisma.area.findMany({ include: { oficinas: true } }),
+      this.prisma.oficina.findMany(),
+      this.prisma.dispositivo.findMany({ include: { tipo: true, destino: true, origen: true } }),
+      this.prisma.tipoDispositivo.findMany(),
+    ]);
+
+    return { areas, offices, devices, deviceTypes };
+  }
+
+  private buildSummary(sources: Awaited<ReturnType<ReportsService['loadSources']>>, filter?: ReportBatchFilterDto) {
+    const filteredOffices = sources.offices.filter((office) => {
+      const matchesFloor = filter?.floor ? office.piso === filter.floor : true;
+      const matchesArea = filter?.areaId ? office.areaId.toString() === filter.areaId : true;
+      return matchesFloor && matchesArea;
+    });
+
+    const filteredAreaIds = new Set(filteredOffices.map((office) => office.areaId.toString()));
+    const filteredAreas = sources.areas.filter((area) => {
+      const matchesArea = filter?.areaId ? area.id.toString() === filter.areaId : true;
+      const matchesFloor = filter?.floor
+        ? filteredAreaIds.has(area.id.toString())
+        : true;
+      return matchesArea && matchesFloor;
+    });
+
+    const filteredDevices = sources.devices.filter((device) => {
+      const matchesOffice = filteredOffices.some((office) => office.id.toString() === device.destinoId.toString());
+      const matchesStatus = filter?.status && filter.status !== 'Todos' ? (device.estado === 'nuevo' ? 'New' : 'Transfer') === filter.status : true;
+      return matchesOffice && matchesStatus;
+    });
+
+    const deviceTypes = sources.deviceTypes.filter((type) =>
+      filteredDevices.some((device) => device.tipoCodigo === type.codigo),
+    );
+
+    const areas = filteredAreas.map((area) => ({
+      id: area.id.toString(),
+      name: area.nombre,
+      officeCount: filteredOffices.filter((office) => office.areaId === area.id).length,
+    }));
+
+    const offices = filteredOffices.map((office) => ({
+      id: office.id.toString(),
+      name: office.nombre,
+      floor: office.piso,
+      areaId: office.areaId.toString(),
+    }));
+
+    const mappedDeviceTypes = deviceTypes.map((type) => ({
+      id: type.codigo,
+      planCode: type.codigo,
+      description: type.descripcion,
+      characteristics: type.caracteristicas || '',
+      brandModel: type.marcaModelo || '',
+      imageUrl: type.imagenUrl || undefined,
+    }));
+
+    const devices = filteredDevices.map((device) => ({
+      id: device.id.toString(),
+      inventoryCode: device.codigoInventario || '',
+      planCode: device.tipoCodigo,
+      typeId: device.tipoCodigo,
+      status: device.estado === 'nuevo' ? 'New' : 'Transfer',
+      floor: device.destino?.piso || 0,
+      destinationOfficeId: device.destinoId.toString(),
+      originOfficeDescription: device.origenDescripcion || device.origen?.nombre || undefined,
+      originOfficeId: device.origenId ? device.origenId.toString() : undefined,
+    }));
+
+    const newDevices = devices.filter((device) => device.status === 'New').length;
+    const transferDevices = devices.filter((device) => device.status === 'Transfer').length;
+
+    return {
+      filter,
+      title: this.buildTitle(filter),
+      areas,
+      offices,
+      deviceTypes: mappedDeviceTypes,
+      devices,
+      totals: {
+        areas: areas.length,
+        offices: offices.length,
+        deviceTypes: mappedDeviceTypes.length,
+        devices: devices.length,
+        newDevices,
+        transferDevices,
+      },
+    };
+  }
+
+  private buildTitle(filter?: ReportBatchFilterDto) {
+    const parts: string[] = [];
+    if (filter?.floor) parts.push(`Piso ${filter.floor}`);
+    if (filter?.areaId) parts.push(`Área ${filter.areaId}`);
+    if (filter?.status && filter.status !== 'Todos') parts.push(filter.status === 'New' ? 'Nuevos' : 'Traslados');
+    return filter?.title || parts.join(' / ') || 'Reporte general';
+  }
 
   async create(createReportDto: CreateReportDto) {
     // return await this.prisma.report.create({ data: createReportDto });
@@ -16,54 +116,15 @@ export class ReportsService {
   }
 
   async summary() {
-    const [areas, offices, devices, deviceTypes] = await Promise.all([
-      this.prisma.area.findMany({ include: { oficinas: true } }),
-      this.prisma.oficina.findMany(),
-      this.prisma.dispositivo.findMany({ include: { tipo: true, destino: true } }),
-      this.prisma.tipoDispositivo.findMany(),
-    ]);
+    const sources = await this.loadSources();
+    return this.buildSummary(sources);
+  }
 
-    const newDevices = devices.filter((device) => device.estado === 'nuevo').length;
-    const transferDevices = devices.filter((device) => device.estado === 'traslado').length;
+  async batch(createReportBatchDto: CreateReportBatchDto) {
+    const sources = await this.loadSources();
 
     return {
-      areas: areas.map((area) => ({
-        id: area.id.toString(),
-        name: area.nombre,
-        officeCount: area.oficinas.length,
-      })),
-      offices: offices.map((office) => ({
-        id: office.id.toString(),
-        name: office.nombre,
-        floor: office.piso,
-        areaId: office.areaId.toString(),
-      })),
-      deviceTypes: deviceTypes.map((type) => ({
-        id: type.codigo,
-        planCode: type.codigo,
-        description: type.descripcion,
-        characteristics: type.caracteristicas || '',
-        brandModel: type.marcaModelo || '',
-        imageUrl: type.imagenUrl || undefined,
-      })),
-      devices: devices.map((device) => ({
-        id: device.id.toString(),
-        inventoryCode: device.codigoInventario || '',
-        planCode: device.tipoCodigo,
-        typeId: device.tipoCodigo,
-        status: device.estado === 'nuevo' ? 'New' : 'Transfer',
-        floor: device.destino?.piso || 0,
-        destinationOfficeId: device.destinoId.toString(),
-        originOfficeId: device.origenId ? device.origenId.toString() : undefined,
-      })),
-      totals: {
-        areas: areas.length,
-        offices: offices.length,
-        deviceTypes: deviceTypes.length,
-        devices: devices.length,
-        newDevices,
-        transferDevices,
-      },
+      reports: createReportBatchDto.reports.map((filter) => this.buildSummary(sources, filter)),
     };
   }
 

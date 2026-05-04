@@ -1,44 +1,48 @@
-import { IsString, IsOptional, IsNumber, IsBoolean } from 'class-validator';
+import { IsArray, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 export class CreateDeviceDto {
   @IsString()
-  name: string;
+  @IsOptional()
+  @MaxLength(100)
+  inventoryCode?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  inventoryCodes?: string[];
+
+  @IsString()
+  typeId: string;
+
+  @IsString()
+  destinationOfficeId: string;
 
   @IsString()
   @IsOptional()
-  description?: string;
+  originOfficeDescription?: string;
 
-  @IsNumber()
+  @IsInt()
   @IsOptional()
-  deviceTypeId?: number;
+  @Min(1)
+  @Max(999)
+  quantity?: number;
+}
 
-  @IsNumber()
+export class UpdateDeviceDto {
+  @IsString()
   @IsOptional()
-  areaId?: number;
+  @MaxLength(100)
+  inventoryCode?: string;
 
-  @IsBoolean()
+  @IsString()
   @IsOptional()
-  active?: boolean = true;
-  }
+  typeId?: string;
 
-  export class UpdateDeviceDto {
-    @IsString()
-    @IsOptional()
-    name?: string;
+  @IsString()
+  @IsOptional()
+  destinationOfficeId?: string;
 
-    @IsString()
-    @IsOptional()
-    description?: string;
-
-    @IsNumber()
-    @IsOptional()
-    deviceTypeId?: number;
-
-    @IsNumber()
-    @IsOptional()
-    areaId?: number;
-
-    @IsBoolean()
-    @IsOptional()
-    active?: boolean;
-  }
+  @IsString()
+  @IsOptional()
+  originOfficeDescription?: string;
+}
