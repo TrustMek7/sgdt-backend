@@ -23,6 +23,12 @@ export class ReportsController {
     return this.reportsService.findAll();
   }
 
+  @Get('summary')
+  @ApiOperation({ summary: 'Obtener resumen para reportes' })
+  async summary() {
+    return this.reportsService.summary();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Obtener un reporte por ID' })
   async findOne(@Param('id') id: string) {

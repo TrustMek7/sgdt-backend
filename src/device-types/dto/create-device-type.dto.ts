@@ -1,28 +1,55 @@
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateDeviceTypeDto {
   @IsString()
-  name: string;
+  @MaxLength(10)
+  planCode: string;
+
+  @IsString()
+  @MaxLength(200)
+  description: string;
 
   @IsString()
   @IsOptional()
-  description?: string;
+  characteristics?: string;
+
+  @IsString()
+  @IsOptional()
+  brandModel?: string;
+
+  @IsString()
+  @IsOptional()
+  imageUrl?: string;
 
   @IsBoolean()
   @IsOptional()
-  active?: boolean = true;
+  isTransfer?: boolean;
 }
 
 export class UpdateDeviceTypeDto {
   @IsString()
   @IsOptional()
-  name?: string;
+  @MaxLength(10)
+  planCode?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(200)
   description?: string;
+
+  @IsString()
+  @IsOptional()
+  characteristics?: string;
+
+  @IsString()
+  @IsOptional()
+  brandModel?: string;
+
+  @IsString()
+  @IsOptional()
+  imageUrl?: string;
 
   @IsBoolean()
   @IsOptional()
-  active?: boolean;
+  isTransfer?: boolean;
 }

@@ -12,8 +12,59 @@ export class ReportsService {
   }
 
   async findAll() {
-    // return await this.prisma.report.findMany();
     return { message: 'Reportes obtenidos', data: [] };
+  }
+
+  async summary() {
+    const [areas, offices, devices, deviceTypes] = await Promise.all([
+      this.prisma.area.findMany({ include: { oficinas: true } }),
+      this.prisma.oficina.findMany(),
+      this.prisma.dispositivo.findMany({ include: { tipo: true, destino: true } }),
+      this.prisma.tipoDispositivo.findMany(),
+    ]);
+
+    const newDevices = devices.filter((device) => device.estado === 'nuevo').length;
+    const transferDevices = devices.filter((device) => device.estado === 'traslado').length;
+
+    return {
+      areas: areas.map((area) => ({
+        id: area.id.toString(),
+        name: area.nombre,
+        officeCount: area.oficinas.length,
+      })),
+      offices: offices.map((office) => ({
+        id: office.id.toString(),
+        name: office.nombre,
+        floor: office.piso,
+        areaId: office.areaId.toString(),
+      })),
+      deviceTypes: deviceTypes.map((type) => ({
+        id: type.codigo,
+        planCode: type.codigo,
+        description: type.descripcion,
+        characteristics: type.caracteristicas || '',
+        brandModel: type.marcaModelo || '',
+        imageUrl: type.imagenUrl || undefined,
+      })),
+      devices: devices.map((device) => ({
+        id: device.id.toString(),
+        inventoryCode: device.codigoInventario || '',
+        planCode: device.tipoCodigo,
+        typeId: device.tipoCodigo,
+        status: device.estado === 'nuevo' ? 'New' : 'Transfer',
+        floor: device.destino?.piso || 0,
+        destinationOfficeId: device.destinoId.toString(),
+        originOfficeId: device.origenId ? device.origenId.toString() : undefined,
+      })),
+      totals: {
+        areas: areas.length,
+        offices: offices.length,
+        deviceTypes: deviceTypes.length,
+        devices: devices.length,
+        newDevices,
+        transferDevices,
+      },
+    };
   }
 
   async findOne(id: number) {

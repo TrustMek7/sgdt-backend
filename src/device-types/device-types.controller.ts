@@ -26,7 +26,7 @@ export class DeviceTypesController {
   @Get(':id')
   @ApiOperation({ summary: 'Obtener un tipo de dispositivo por ID' })
   async findOne(@Param('id') id: string) {
-    return this.deviceTypesService.findOne(+id);
+    return this.deviceTypesService.findOne(id);
   }
 
   @Patch(':id')
@@ -34,7 +34,7 @@ export class DeviceTypesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Actualizar un tipo de dispositivo' })
   async update(@Param('id') id: string, @Body() updateDeviceTypeDto: UpdateDeviceTypeDto) {
-    return this.deviceTypesService.update(+id, updateDeviceTypeDto);
+    return this.deviceTypesService.update(id, updateDeviceTypeDto);
   }
 
   @Delete(':id')
@@ -42,6 +42,6 @@ export class DeviceTypesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Eliminar un tipo de dispositivo' })
   async remove(@Param('id') id: string) {
-    return this.deviceTypesService.remove(+id);
+    return this.deviceTypesService.remove(id);
   }
 }
