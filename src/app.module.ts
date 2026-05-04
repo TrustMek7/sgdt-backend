@@ -9,6 +9,7 @@ import { DevicesModule } from './devices/devices.module';
 import { DeviceTypesModule } from './device-types/device-types.module';
 import { OfficesModule } from './offices/offices.module';
 import { ReportsModule } from './reports/reports.module';
+import { BajasModule } from './bajas/bajas.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ReportsModule } from './reports/reports.module';
     DeviceTypesModule,
     OfficesModule,
     ReportsModule,
+    BajasModule,
   ],
   controllers: [AppController],
   providers: [AppService],

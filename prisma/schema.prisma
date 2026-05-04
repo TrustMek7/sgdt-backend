@@ -33,6 +33,7 @@ model Area {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   oficinas  Oficina[]
+  bajas     Baja[]
 
   @@map("area")
 }
@@ -66,6 +67,21 @@ model Dispositivo {
   updatedAt        DateTime        @updatedAt
 
   @@map("dispositivo")
+}
+
+model Baja {
+  id               Int      @id @default(autoincrement())
+  codigoInventario  String?  @unique @db.VarChar(100)
+  areaId            Int
+  area              Area     @relation(fields: [areaId], references: [id])
+  oficinaNombre     String?  @db.VarChar(200)
+  descripcion       String   @db.Text
+  origen            String?  @db.VarChar(200)
+  motivo            String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("baja")
 }
 
 enum Estado {

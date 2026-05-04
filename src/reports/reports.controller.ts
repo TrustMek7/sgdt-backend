@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import { CreateReportBatchDto, CreateReportDto, UpdateReportDto } from './dto/create-report.dto';
@@ -33,6 +33,12 @@ export class ReportsController {
   @ApiOperation({ summary: 'Obtener resumen para reportes' })
   async summary() {
     return this.reportsService.summary();
+  }
+
+  @Get('areas')
+  @ApiOperation({ summary: 'Obtener reporte agrupado por área' })
+  async areaReports(@Query('areaId') areaId?: string) {
+    return this.reportsService.areaReports(areaId);
   }
 
   @Get(':id')

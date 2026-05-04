@@ -7,14 +7,65 @@ export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
   private async loadSources() {
-    const [areas, offices, devices, deviceTypes] = await Promise.all([
+    const [areas, offices, devices, deviceTypes, bajas] = await Promise.all([
       this.prisma.area.findMany({ include: { oficinas: true } }),
       this.prisma.oficina.findMany(),
       this.prisma.dispositivo.findMany({ include: { tipo: true, destino: true, origen: true } }),
       this.prisma.tipoDispositivo.findMany(),
+      this.prisma.baja.findMany({ include: { area: true } }),
     ]);
 
-    return { areas, offices, devices, deviceTypes };
+    return { areas, offices, devices, deviceTypes, bajas };
+  }
+
+  private buildAreaReports(sources: Awaited<ReturnType<ReportsService['loadSources']>>, areaId?: string) {
+    const areas = areaId ? sources.areas.filter((area) => area.id.toString() === areaId) : sources.areas;
+
+    return areas
+      .map((area) => {
+        const areaOfficeIds = sources.offices.filter((office) => office.areaId === area.id).map((office) => office.id);
+        const areaDevices = sources.devices.filter((device) => areaOfficeIds.includes(device.destinoId));
+        const areaBajas = sources.bajas.filter((baja) => baja.areaId === area.id);
+
+        const mapDevice = (device: (typeof sources.devices)[number]) => ({
+          id: device.id.toString(),
+          inventoryCode: device.codigoInventario || '',
+          planCode: device.tipoCodigo,
+          description: device.tipo.descripcion,
+          origin: device.origenDescripcion || device.origen?.nombre || '-',
+        });
+
+        const newDevices = areaDevices.filter((device) => device.estado === 'nuevo').map(mapDevice);
+        const transferDevices = areaDevices.filter((device) => device.estado === 'traslado').map(mapDevice);
+        const bajas = areaBajas.map((baja) => ({
+          id: baja.id.toString(),
+          inventoryCode: baja.codigoInventario || '',
+          description: baja.descripcion,
+          officeName: baja.oficinaNombre || '-',
+          origin: baja.origen || '-',
+          reason: baja.motivo || '-',
+        }));
+
+        if (newDevices.length === 0 && transferDevices.length === 0 && bajas.length === 0) {
+          return null;
+        }
+
+        return {
+          area: {
+            id: area.id.toString(),
+            name: area.nombre,
+          },
+          newDevices,
+          transferDevices,
+          bajas,
+          totals: {
+            newDevices: newDevices.length,
+            transferDevices: transferDevices.length,
+            bajas: bajas.length,
+          },
+        };
+      })
+      .filter(Boolean);
   }
 
   private buildSummary(sources: Awaited<ReturnType<ReportsService['loadSources']>>, filter?: ReportBatchFilterDto) {
@@ -125,6 +176,14 @@ export class ReportsService {
 
     return {
       reports: createReportBatchDto.reports.map((filter) => this.buildSummary(sources, filter)),
+    };
+  }
+
+  async areaReports(areaId?: string) {
+    const sources = await this.loadSources();
+
+    return {
+      reports: this.buildAreaReports(sources, areaId),
     };
   }
 
