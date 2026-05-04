@@ -75,7 +75,12 @@ src/
    npx prisma generate
    ```
 
-4. **Iniciar el servidor**
+4. **Cargar datos fijos de prueba**
+   ```bash
+   npm run db:seed
+   ```
+
+5. **Iniciar el servidor**
    ```bash
    npm run start:dev
    ```

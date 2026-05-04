@@ -19,26 +19,26 @@ export class CreateDeviceDto {
   @IsBoolean()
   @IsOptional()
   active?: boolean = true;
-}
+  }
 
-export class UpdateDeviceDto {
-  @IsString()
-  @IsOptional()
-  name?: string;
+  export class UpdateDeviceDto {
+    @IsString()
+    @IsOptional()
+    name?: string;
 
-  @IsString()
-  @IsOptional()
-  description?: string;
+    @IsString()
+    @IsOptional()
+    description?: string;
 
-  @IsNumber()
-  @IsOptional()
-  deviceTypeId?: number;
+    @IsNumber()
+    @IsOptional()
+    deviceTypeId?: number;
 
-  @IsNumber()
-  @IsOptional()
-  areaId?: number;
+    @IsNumber()
+    @IsOptional()
+    areaId?: number;
 
-  @IsBoolean()
-  @IsOptional()
-  active?: boolean;
-}
+    @IsBoolean()
+    @IsOptional()
+    active?: boolean;
+  }
