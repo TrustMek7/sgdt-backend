@@ -47,43 +47,55 @@ src/
 - PostgreSQL 12+
 - npm o yarn
 
-### Pasos
+### 1) Instalar dependencias
 
-1. **Instalar dependencias**
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
-2. **Configurar variables de entorno**
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Edita `.env` con tus credenciales:
-   ```
-   DATABASE_URL=postgresql://user:password@localhost:5432/sgdt_db
-   JWT_SECRET=your_secure_secret_key
-   JWT_EXPIRATION=7d
-   PORT=3000
-   NODE_ENV=development
-   CORS_ORIGIN=http://localhost:3001
-   ```
+### 2) Crear la base de datos y el usuario
 
-3. **Sincronizar base de datos con Prisma**
-   ```bash
-   npx prisma migrate deploy
-   npx prisma generate
-   ```
+Con un usuario administrador de PostgreSQL, entra a `psql` y ejecuta:
 
-4. **Cargar datos fijos de prueba**
-   ```bash
-   npm run db:seed
-   ```
+```sql
+CREATE USER sgdt_user WITH PASSWORD 'tu_password_segura';
+CREATE DATABASE sgdt_db OWNER sgdt_user;
+GRANT ALL PRIVILEGES ON DATABASE sgdt_db TO sgdt_user;
+```
 
-5. **Iniciar el servidor**
-   ```bash
-   npm run start:dev
-   ```
+Si prefieres, puedes hacerlo desde la consola de PostgreSQL con los mismos comandos.
+
+### 3) Configurar variables de entorno
+
+Crea el archivo `.env` en la raíz del backend y completa tus datos reales:
+
+```env
+DATABASE_URL=postgresql://sgdt_user:tu_password_segura@localhost:5432/sgdt_db
+JWT_SECRET=tu_clave_secreta
+JWT_EXPIRATION=7d
+PORT=3000
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:5173
+```
+
+### 4) Crear el esquema de Prisma
+
+```bash
+npx prisma migrate deploy
+npx prisma generate
+```
+
+### 5) Cargar datos de prueba
+
+```bash
+npm run db:seed
+```
+
+### 6) Iniciar el servidor
+
+```bash
+npm run start:dev
+```
 
 ## 📚 Comandos Disponibles
 
@@ -188,6 +200,24 @@ const response = await fetch('http://localhost:3000/areas', {
   }
 });
 ```
+
+## 🖼️ Imágenes referenciales
+
+Las imágenes que quieras imprimir en la tabla o en el PDF deben ser accesibles por URL pública.
+
+Recomendación:
+
+1. Guarda las imágenes en `public/device-images/` dentro del backend.
+2. El backend las expone automáticamente en `http://localhost:3000/uploads/...`.
+3. Usa esa URL completa en el campo `imageUrl` de `TipoDispositivo`.
+
+Ejemplo:
+
+```text
+http://localhost:3000/uploads/brother-mfc-t930dw.jpg
+```
+
+Si el archivo no es accesible por URL, no podrá verse ni en la tabla ni al exportar el PDF.
 
 ## 📝 Variables de Entorno
 
